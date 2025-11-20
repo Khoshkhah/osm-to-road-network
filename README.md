@@ -91,11 +91,11 @@ The `create_network.py` script executes the following steps:
 
 ## 7. Special Features
 
-### 🚀 H3 Spatial Indexing
+### H3 Spatial Indexing
 This project uniquely integrates **Uber's H3 Hexagonal Hierarchical Spatial Index**. By mapping nodes to H3 cells and calculating LCA resolutions, the network supports **hierarchical routing algorithms**. This allows routers to ignore lower-level roads when traversing large distances, significantly speeding up pathfinding.
 
-### 🛑 Robust Turn Restrictions
+### Robust Turn Restrictions
 Many basic OSM converters ignore turn restrictions. This project explicitly extracts them from OSM relations and builds an **Edge Graph** (Dual Graph). This ensures that a route will never suggest an illegal turn, which is critical for realistic navigation.
 
-### 🏎️ Intelligent Speed Inference
+### Intelligent Speed Inference
 Raw OSM data often lacks speed limits. The `SpeedProcessor` module uses a heuristic dictionary to infer speed limits based on road types (`highway` tag), ensuring that cost calculations are reasonable even when data is missing.
