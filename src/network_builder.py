@@ -15,7 +15,7 @@ class NetworkBuilder:
         self.nodes_df = None
         self.edge_graph_df = None
         self.shortcut_table = None
-    
+        self.edge_id_df = None    
     def get_district_boundaries(self):
         """Extract district boundaries from OSM."""
         osm = OSM(self.pbf_file)
@@ -75,8 +75,10 @@ class NetworkBuilder:
             lambda row: (row['source'], row['target']),
             axis=1
         )
+        self.edge_id_df = edges_df.reset_index()[['id', 'index']]
+        
         edges_df = edges_df[[
-            "id", "source", "target", "length", "maxspeed", "geometry", "highway"
+            "source", "target", "length", "maxspeed", "geometry", "highway"
         ]]
         
         self.edges_df = edges_df[
@@ -164,12 +166,12 @@ class NetworkBuilder:
         # Use MultiIndex for robust tuple lookups
         if 'source' in self.edges_df.columns and 'target' in self.edges_df.columns:
             self.edges_df.set_index(['source', 'target'], inplace=True)
-        elif 'id' in self.edges_df.columns:
+        #elif 'id' in self.edges_df.columns:
              # Fallback if source/target not available (should not happen based on extract_edges_and_nodes)
-             self.edges_df.set_index('id', inplace=True)
+        #     self.edges_df.set_index('id', inplace=True)
         
         shortcut_table = edge_graph_df.copy()
-        shortcut_table['next_edge'] = shortcut_table['outgoing_edge']
+        shortcut_table['via_edge'] = shortcut_table['outgoing_edge']
         shortcut_table['cost'] = shortcut_table['incoming_edge'].apply(
             lambda x: self.edges_df.loc[x]['cost']
         )
@@ -200,10 +202,18 @@ class NetworkBuilder:
         os.makedirs(output_dir, exist_ok=True)
         
         prefix = f"{output_dir}/{self.district_name}_driving"
-        
+        self.edge_id_df.to_csv(f"{prefix}_edge_id.csv")
+        self.edge_id_df.set_index("id", inplace=True)
         self.nodes_df.to_csv(f"{prefix}_simplified_nodes.csv")
+        # Use index to lookup edge_id since 'id' column is no longer present
+        self.edges_df["id"] = self.edges_df.index.map(lambda x: self.edge_id_df.loc[[x]]['index'].values[0])
         self.edges_df.to_csv(f"{prefix}_simplified_edges_with_h3.csv")
+        self.edge_graph_df["incoming_edge"] = self.edge_graph_df["incoming_edge"].apply(lambda x: self.edge_id_df.loc[[x]]['index'].values[0])
+        self.edge_graph_df["outgoing_edge"] = self.edge_graph_df["outgoing_edge"].apply(lambda x: self.edge_id_df.loc[[x]]['index'].values[0])
         self.edge_graph_df.to_csv(f"{prefix}_edge_graph.csv")
+        self.shortcut_table["incoming_edge"] = self.shortcut_table["incoming_edge"].apply(lambda x: self.edge_id_df.loc[[x]]['index'].values[0])
+        self.shortcut_table["outgoing_edge"] = self.shortcut_table["outgoing_edge"].apply(lambda x: self.edge_id_df.loc[[x]]['index'].values[0])
+        self.shortcut_table["via_edge"] = self.shortcut_table["via_edge"].apply(lambda x: self.edge_id_df.loc[[x]]['index'].values[0])
         self.shortcut_table.to_csv(f"{prefix}_shortcut_table.csv")
         
         print(f"Outputs saved to {output_dir}")

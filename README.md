@@ -22,6 +22,14 @@ pip install -r requirements.txt
 python scripts/create_network.py --region Kentucky --district Somerset --output data/output
 ```
 
+### Post-Processing (Optional)
+
+To add integer indices to an existing edges CSV (if not using the main pipeline which does this automatically):
+
+```bash
+python scripts/index_edges.py --input data/output/Somerset_driving_simplified_edges_with_h3.csv --output data/output/Somerset_driving_edges_indexed.csv
+```
+
 ## 4. Input Data
 
 The primary input is **OpenStreetMap (OSM) data** in PBF format (`.osm.pbf`).
@@ -42,30 +50,35 @@ Contains the vertices of the road network.
 
 ### B. Edges File (`*_simplified_edges_with_h3.csv`)
 Contains the road segments connecting nodes.
-*   `id`: Unique edge identifier (tuple of source, target).
+*   `id`: Unique integer edge identifier.
 *   `source`: ID of the starting node.
 *   `target`: ID of the ending node.
 *   `length`: Length of the segment in meters.
 *   `maxspeed`: Speed limit in km/h.
 *   `geometry`: LineString geometry.
-*   `incoming_cell`: H3 cell index of the target node.
-*   `outgoing_cell`: H3 cell index of the source node.
+*   `incoming_cell`: H3 cell index of the target node (Integer).
+*   `outgoing_cell`: H3 cell index of the source node (Integer).
 *   `lca_res`: Resolution of the Lowest Common Ancestor H3 cell.
 *   `cost`: Travel time cost (seconds).
 
 ### C. Edge Graph (`*_edge_graph.csv`)
 Represents the connectivity *between edges*, essential for modeling turn restrictions.
-*   `incoming_edge`: ID of the edge entering a node.
-*   `outgoing_edge`: ID of the edge leaving that node.
+*   `incoming_edge`: Integer ID of the edge entering a node.
+*   `outgoing_edge`: Integer ID of the edge leaving that node.
 *   **Note**: Forbidden turns are excluded from this graph.
 
 ### D. Shortcut Table (`*_shortcut_table.csv`)
 An optimized table for hierarchical routing algorithms.
-*   `incoming_edge`: The edge being traversed.
-*   `next_edge`: The subsequent edge.
+*   `incoming_edge`: The edge being traversed (Integer ID).
+*   `via_edge`: The subsequent edge (Integer ID).
 *   `cost`: Cost to traverse the incoming edge.
-*   `via_cell`: H3 cell of the junction.
+*   `via_cell`: H3 cell of the junction (Integer).
 *   `lca_res`: Hierarchical level for routing decisions.
+
+### E. Edge ID Mapping (`*_edge_id.csv`)
+Mapping between the integer edge ID and the original (source, target) tuple.
+*   `id`: Original edge identifier (source_node, target_node).
+*   `index`: The assigned integer edge ID.
 
 ## 6. Pipeline Processing
 
