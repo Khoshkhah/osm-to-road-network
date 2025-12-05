@@ -202,18 +202,18 @@ class NetworkBuilder:
         os.makedirs(output_dir, exist_ok=True)
         
         prefix = f"{output_dir}/{self.district_name}_driving"
-        self.edge_id_df.to_csv(f"{prefix}_edge_id.csv")
+        self.edge_id_df.to_csv(f"{prefix}_edge_id.csv",index=False)
         self.edge_id_df.set_index("id", inplace=True)
-        self.nodes_df.to_csv(f"{prefix}_simplified_nodes.csv")
+        self.nodes_df.to_csv(f"{prefix}_simplified_nodes.csv",index=False)
         # Use index to lookup edge_id since 'id' column is no longer present
         self.edges_df["id"] = self.edges_df.index.map(lambda x: self.edge_id_df.loc[[x]]['index'].values[0])
-        self.edges_df.to_csv(f"{prefix}_simplified_edges_with_h3.csv")
+        self.edges_df.to_csv(f"{prefix}_simplified_edges_with_h3.csv",index=False)
         self.edge_graph_df["incoming_edge"] = self.edge_graph_df["incoming_edge"].apply(lambda x: self.edge_id_df.loc[[x]]['index'].values[0])
         self.edge_graph_df["outgoing_edge"] = self.edge_graph_df["outgoing_edge"].apply(lambda x: self.edge_id_df.loc[[x]]['index'].values[0])
-        self.edge_graph_df.to_csv(f"{prefix}_edge_graph.csv")
+        self.edge_graph_df.to_csv(f"{prefix}_edge_graph.csv",index=False)
         self.shortcut_table["incoming_edge"] = self.shortcut_table["incoming_edge"].apply(lambda x: self.edge_id_df.loc[[x]]['index'].values[0])
         self.shortcut_table["outgoing_edge"] = self.shortcut_table["outgoing_edge"].apply(lambda x: self.edge_id_df.loc[[x]]['index'].values[0])
         self.shortcut_table["via_edge"] = self.shortcut_table["via_edge"].apply(lambda x: self.edge_id_df.loc[[x]]['index'].values[0])
-        self.shortcut_table.to_csv(f"{prefix}_shortcut_table.csv")
+        self.shortcut_table.to_csv(f"{prefix}_shortcut_table.csv", index=False)
         
         print(f"Outputs saved to {output_dir}")
