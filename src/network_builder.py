@@ -204,7 +204,7 @@ class NetworkBuilder:
         prefix = f"{output_dir}/{self.district_name}_driving"
         self.edge_id_df.to_csv(f"{prefix}_edge_id.csv",index=False)
         self.edge_id_df.set_index("id", inplace=True)
-        self.nodes_df.to_csv(f"{prefix}_simplified_nodes.csv",index=False)
+        self.nodes_df.to_csv(f"{prefix}_simplified_nodes.csv")
         # Use index to lookup edge_id since 'id' column is no longer present
         self.edges_df["id"] = self.edges_df.index.map(lambda x: self.edge_id_df.loc[[x]]['index'].values[0])
         self.edges_df.to_csv(f"{prefix}_simplified_edges_with_h3.csv",index=False)
