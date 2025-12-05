@@ -124,3 +124,28 @@ To use these projects together:
 1.  Run `osm-to-road-network` to generate the network files.
 2.  Configure `spark-shortest-path` to point to these generated CSV files.
 
+---
+
+## 9. Related Projects
+
+This project is part of a three-stage routing pipeline:
+
+| Stage | Project | Description |
+|-------|---------|-------------|
+| 1. Extract | **osm-to-road-network** (this repo) | Converts OpenStreetMap data to road network with H3 indexing and turn restrictions |
+| 2. Preprocess | [spark-shortest-path](https://github.com/khoshkhah/spark-shortest-path) | Builds Contraction Hierarchy shortcuts using PySpark |
+| 3. Query | [dijkstra-on-Hierarchy](https://github.com/khoshkhah/dijkstra-on-Hierarchy) | Production-ready C++ query engine for CH shortest paths |
+
+```
+┌─────────────────────┐     ┌─────────────────────┐     ┌─────────────────────┐
+│ osm-to-road-network │────▶│ spark-shortest-path │────▶│dijkstra-on-Hierarchy│
+│    (OSM → Graph)    │     │  (Graph → Shortcuts)│     │ (Shortcuts → Query) │
+└─────────────────────┘     └─────────────────────┘     └─────────────────────┘
+```
+
+### Data Flow
+
+1. **osm-to-road-network** outputs `*_edges_with_h3.csv` and `*_edge_graph.csv`
+2. **spark-shortest-path** reads these files and produces `shortcuts.parquet`
+3. **dijkstra-on-Hierarchy** loads the Parquet file for sub-millisecond queries
+
