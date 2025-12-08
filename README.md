@@ -22,6 +22,13 @@ pip install -r requirements.txt
 python scripts/create_network.py --region Kentucky --district Somerset --output data/output
 ```
 
+To process the **whole region** (all districts combined):
+
+```bash
+python scripts/create_network.py --region Vancouver --district all --output data/output
+```
+*Note: This will prefix output files with `all_{Region}` (e.g., `all_Vancouver_driving_...`).*
+
 ### Post-Processing (Optional)
 
 To add integer indices to an existing edges CSV (if not using the main pipeline which does this automatically):
@@ -80,6 +87,11 @@ Mapping between the integer edge ID and the original (source, target) tuple.
 *   `id`: Original edge identifier (source_node, target_node).
 *   `index`: The assigned integer edge ID.
 
+### F. Boundary File (`*_boundary.geojson`)
+A GeoJSON file defining the geographic boundary of the network.
+*   **Specific District**: Contains the administrative boundary (Admin Level 8).
+*   **Whole Region**: Contains the **Union** of all Admin Level 8 boundaries in the region.
+
 ## 6. Pipeline Processing
 
 The `create_network.py` script executes the following steps:
@@ -100,7 +112,7 @@ The `create_network.py` script executes the following steps:
     *   Calculates the Lowest Common Ancestor (LCA) resolution for edge pairs to support hierarchical spatial reasoning.
 9.  **Calculate Costs**: Computes travel time based on length and speed.
 10. **Create Shortcut Table**: Assembles the final routing table with all pre-calculated metrics.
-11. **Save**: Exports all datasets to CSV.
+11. **Save**: Exports all datasets to CSV and saves the boundary to GeoJSON.
 
 ## 7. Special Features
 
@@ -124,9 +136,11 @@ To use these projects together:
 1.  Run `osm-to-road-network` to generate the network files.
 2.  Configure `spark-shortest-path` to point to these generated CSV files.
 
----
+## 9. Visualization
 
-## 9. Related Projects
+The project includes a Jupyter Notebook `notebooks/analysis_network.ipynb` which demonstrates how to load and visualize the generated graph and boundary files relative to the project structure.
+
+## 10. Related Projects
 
 This project is part of a three-stage routing pipeline:
 

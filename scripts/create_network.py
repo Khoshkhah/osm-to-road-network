@@ -18,11 +18,19 @@ def main(region, district, output_dir):
     pbf_file = downloader.download_region(region)
     print(f"Downloaded: {pbf_file}")
     
+    # Determine output name and filter
+    if district.lower() == 'all':
+        output_name = f"all_{region}"
+        district_filter = None
+    else:
+        output_name = district
+        district_filter = district
+        
     # Build network
-    builder = NetworkBuilder(pbf_file, district)
+    builder = NetworkBuilder(pbf_file, output_name)
     
     print("Building graph...")
-    builder.build_graph(district)
+    builder.build_graph(district_filter)
     
     print("Simplifying graph...")
     builder.simplify_graph()

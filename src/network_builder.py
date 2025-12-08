@@ -7,15 +7,17 @@ from .restriction_handler import TurnRestrictionProcessor
 from .h3_processor import H3Processor
 
 class NetworkBuilder:
-    def __init__(self, pbf_file, district_name):
+    def __init__(self, pbf_file, output_name):
         self.pbf_file = pbf_file
-        self.district_name = district_name
+        self.output_name = output_name
         self.graph = None
         self.edges_df = None
         self.nodes_df = None
         self.edge_graph_df = None
         self.shortcut_table = None
-        self.edge_id_df = None    
+        self.edge_id_df = None
+        self.boundary_gdf = None
+        
     def get_district_boundaries(self):
         """Extract district boundaries from OSM."""
         osm = OSM(self.pbf_file)
@@ -31,13 +33,39 @@ class NetworkBuilder:
             boundaries_filtered["admin_level"] == 8
         ].set_index("name")
     
-    def build_graph(self, district_name, network_type='driving'):
-        """Build network graph for a district."""
-        osm = OSM(self.pbf_file)
+    def get_graph_boundary(self):
+        """Get union of all admin level 8 boundaries."""
+        import geopandas as gpd
+        from shapely.ops import unary_union
+        
+        # Reuse existing method to fetch level 8 boundaries
         boundaries = self.get_district_boundaries()
         
-        bbox_geom = boundaries.loc[district_name]["geometry"]
-        osm_district = OSM(self.pbf_file, bounding_box=bbox_geom)
+        if boundaries.empty:
+             return None
+             
+        # Create unary union of all geometries
+        union_poly = unary_union(boundaries.geometry)
+        
+        # Create GeoDataFrame
+        gdf = gpd.GeoDataFrame(
+            {'geometry': [union_poly]},
+            crs="EPSG:4326"
+        )
+        return gdf
+    
+    def build_graph(self, district_filter=None, network_type='driving'):
+        """Build network graph for a district or whole region."""
+        
+        if district_filter:
+            # Filter by district boundary
+            boundaries = self.get_district_boundaries()
+            bbox_geom = boundaries.loc[district_filter]["geometry"]
+            self.boundary_gdf = boundaries.loc[[district_filter]]
+            osm_district = OSM(self.pbf_file, bounding_box=bbox_geom)
+        else:
+            # Whole region
+            osm_district = OSM(self.pbf_file)
         
         nodes_gdf, edges_gdf = osm_district.get_network(
             network_type=network_type,
@@ -50,6 +78,9 @@ class NetworkBuilder:
             graph_type="networkx",
             osmnx_compatible=True
         )
+        
+        if district_filter is None:
+             self.boundary_gdf = self.get_graph_boundary()
         
         return self.graph
     
@@ -201,7 +232,11 @@ class NetworkBuilder:
         import os
         os.makedirs(output_dir, exist_ok=True)
         
-        prefix = f"{output_dir}/{self.district_name}_driving"
+        prefix = f"{output_dir}/{self.output_name}_driving"
+        
+        if self.boundary_gdf is not None:
+             self.boundary_gdf.to_file(f"{prefix}_boundary.geojson", driver='GeoJSON')
+             
         self.edge_id_df.to_csv(f"{prefix}_edge_id.csv",index=False)
         self.edge_id_df.set_index("id", inplace=True)
         self.nodes_df.to_csv(f"{prefix}_simplified_nodes.csv")
