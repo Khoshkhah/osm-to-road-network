@@ -67,6 +67,7 @@ Contains the road segments connecting nodes.
 *   `outgoing_cell`: H3 cell index of the source node (Integer).
 *   `lca_res`: Resolution of the Lowest Common Ancestor H3 cell.
 *   `cost`: Travel time cost (seconds).
+     > **Note**: When processed by the current Spark pipeline (`spark-shortest-path`), the output "cost" is effectively `length / maxspeed` (m / km/h), which is **3.6x smaller** than seconds. The frontend application should multiply this by 3.6 to display correct seconds.
 
 ### C. Edge Graph (`*_edge_graph.csv`)
 Represents the connectivity *between edges*, essential for modeling turn restrictions.
